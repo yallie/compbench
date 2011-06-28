@@ -4,10 +4,15 @@
 // Generating test data...
 // Binary: 111190 bytes.
 // Textual: 100000 bytes.
-// Compression: LZF-binary, size: 111190 -> 74333, elapsed: 00:00:22.1782598
-// Compression: QuickLZ-binary, size: 111190 -> 85842, elapsed: 00:00:16.0261312
-// Compression: LZF-text, size: 100000 -> 71201, elapsed: 00:00:20.2352268
-// Compression: QuickLZ-text, size: 100000 -> 59138, elapsed: 00:00:08.1507199
+// Starting benchmark...
+// Compression:   LZF-bin, size: 111190 ->  74333, elapsed: 00:00:00.4204308, speed: 26,447 mb/s
+// Decompression: LZF-bin, size:  74333 -> 111190, elapsed: 00:00:00.1474497, speed: 50,412 mb/s
+// Compression:   QLZ-bin, size: 111190 ->  85842, elapsed: 00:00:00.3202638, speed: 34,718 mb/s
+// Decompression: QLZ-bin, size:  85842 -> 111190, elapsed: 00:00:00.2845554, speed: 30,167 mb/s
+// Compression:   LZF-txt, size: 100000 ->  71201, elapsed: 00:00:00.3851780, speed: 25,962 mb/s
+// Decompression: LZF-txt, size:  71201 -> 100000, elapsed: 00:00:00.1342634, speed: 53,031 mb/s
+// Compression:   QLZ-txt, size: 100000 ->  59138, elapsed: 00:00:00.1580589, speed: 63,268 mb/s
+// Decompression: QLZ-txt, size:  59138 -> 100000, elapsed: 00:00:00.2039518, speed: 28,996 mb/s
 
 using System;
 using System.Linq;
@@ -20,7 +25,7 @@ using Lzf;
 
 class Program
 {
-	const int iterations = 5000;
+	const int iterations = 100; //5000;
 
 	static void Main()
 	{
@@ -35,50 +40,102 @@ class Program
 		File.WriteAllBytes("bench1.dat", sample1);
 		File.WriteAllBytes("bench2.dat", sample2);
 
-		Benchmark("LZF-binary", iterations, sample1, LzfCompress, LzfDecompress);
-		Benchmark("QuickLZ-binary", iterations, sample1, QuickLZCompress, QuickLZDecompress);
+		Console.WriteLine("Starting benchmark...");
 
-		Benchmark("LZF-text", iterations, sample2, LzfCompress, LzfDecompress);
-		Benchmark("QuickLZ-text", iterations, sample2, QuickLZCompress, QuickLZDecompress);
+		Benchmark("LZF-bin", iterations, sample1, "bench1.lzf", LzfCompress, LzfDecompress);
+		Benchmark("QLZ-bin", iterations, sample1, "bench1.qlz", QuickLZCompress, QuickLZDecompress);
+
+		Benchmark("LZF-txt", iterations, sample2, "bench2.lzf", LzfCompress, LzfDecompress);
+		Benchmark("QLZ-txt", iterations, sample2, "bench2.qlz", QuickLZCompress, QuickLZDecompress);
 	}
 
-	static LZF lzf = new LZF();
-
-	static byte[] LzfCompress(byte[] data)
-	{
-		var output = new byte[data.Length * 2];
-		var size = lzf.Compress(data, data.Length, output, output.Length);
-		var dest = new byte[size];
-		Array.Copy(output, dest, size);
-		return dest;
-	}
-
-	static byte[] QuickLZCompress(byte[] data)
-	{
-		return QuickLZ.compress(data, 1);
-	}
-
-	static void LzfDecompress(byte[] data)
-	{
-		// todo
-	}
-
-	static void QuickLZDecompress(byte[] data)
-	{
-		// todo
-	}
-
-	static void Benchmark(string name, int iterations, byte[] inputData, Func<byte[], byte[]> compress, Action<byte[]> decompress)
+	static void Benchmark(string name, int iterations, byte[] inputData, string outFileName, Func<byte[], CompressionResult> compress, Func<CompressionResult, int> decompress)
 	{
 		var sw = new Stopwatch();
 		sw.Start();
-		byte[] data = new byte[0];
+		var data = new CompressionResult();
 
 		for (var i = 0; i < iterations; i++)
 			data = compress(inputData);
 
 		sw.Stop();
-		Console.WriteLine("Compression: {0}, size: {1} -> {2}, elapsed: {3}", name, inputData.Length, data.Length, sw.Elapsed);
+		data.Save(outFileName);
+
+		var speed = iterations * inputData.Length / (sw.Elapsed.TotalMilliseconds > 0 ? sw.Elapsed.TotalMilliseconds : 1) / 1000;
+		Console.WriteLine("Compression:   {0}, size: {1,6} -> {2,6}, elapsed: {3}, speed: {4:#0.000} mb/s", name, inputData.Length, data.Length, sw.Elapsed, speed);
+
+		sw = new Stopwatch();
+		sw.Start();
+		var length = 0;
+
+		for (var i = 0; i < iterations; i++)
+			length = decompress(data);
+
+		sw.Stop();
+
+		speed = iterations * data.Length / (sw.Elapsed.TotalMilliseconds > 0 ? sw.Elapsed.TotalMilliseconds : 1) / 1000;
+		Console.WriteLine("Decompression: {0}, size: {1,6} -> {2,6}, elapsed: {3}, speed: {4:#0.000} mb/s", name, data.Length, length, sw.Elapsed, speed);
+	}
+
+	class CompressionResult
+	{
+		public byte[] Data { get; set; }
+
+		public int Length { get; set; }
+
+		public void Save(string fileName)
+		{
+			using (var fs = File.Create(fileName))
+			{
+				fs.Write(Data, 0, Length);
+				fs.Close();
+			}
+		}
+	}
+
+	static LZF lzf = new LZF();
+
+	static CompressionResult LzfCompress(byte[] data)
+	{
+		var output = new byte[data.Length * 2];
+		var size = lzf.Compress(data, data.Length, output, output.Length);
+		return new CompressionResult
+		{
+			Data = output,
+			Length = size
+		};
+	}
+
+	static int LzfDecompress(CompressionResult data)
+	{
+		var output = new byte[data.Length * 2];
+		return lzf.Decompress(data.Data, data.Length, output, output.Length);
+	}
+
+	static CompressionResult QuickLZCompress(byte[] data)
+	{
+		var output = QuickLZ.compress(data, 1);
+		return new CompressionResult
+		{
+			Data = output,
+			Length = output.Length
+		};
+	}
+
+	static int QuickLZDecompress(CompressionResult data)
+	{
+		var output = QuickLZ.decompress(data.Data);
+		return output.Length;
+	}
+
+	static byte[] GeneratePseudoBinaryData(Random rnd)
+	{
+		return GenerateData(rnd, 20000, 30, 0, Byte.MaxValue);
+	}
+
+	static byte[] GeneratePseudoTextualData(Random rnd)
+	{
+		return Encoding.Default.GetBytes(new MarkovChainGenerator().Generate(rnd, 100000));
 	}
 
 	static byte[] GenerateData(Random rnd, int iterations, int maxRepeats, byte min, byte max)
@@ -94,16 +151,6 @@ class Program
 		}
 		
 		return result.ToArray();
-	}
-
-	static byte[] GeneratePseudoBinaryData(Random rnd)
-	{
-		return GenerateData(rnd, 20000, 30, 0, Byte.MaxValue);
-	}
-
-	static byte[] GeneratePseudoTextualData(Random rnd)
-	{
-		return Encoding.Default.GetBytes(new MarkovChainGenerator().Generate(rnd, 100000));
 	}
 
 	// Thanks to Visar Shehu for an easy Markov chain example code:
