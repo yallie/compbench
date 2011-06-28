@@ -1,56 +1,70 @@
-// Written by Y [28-06-11]
-// csc bench.cs LZF.cs QuickLZ.cs 
+//--------------------------------------------------------------------------------------------
+// C# compression algorithms benchmark:
+//
+// * C# LZF: http://csharplzfcompression.codeplex.com
+// * QuickLZ 1.5.0 final: http://quicklz.com
+// * DeflateStream: http://msdn.microsoft.com/library/system.io.compression.deflatestream.aspx
+//
+// Written Jun 28, 2011 by yallie@yandex.ru 
+//--------------------------------------------------------------------------------------------
 
-// Generating test data...
-// Binary: 111190 bytes.
-// Textual: 100000 bytes.
-// Starting benchmark...
-// Compression:   LZF-bin, size: 111190 ->  74333, elapsed: 00:00:00.4204308, speed: 26,447 mb/s
-// Decompression: LZF-bin, size:  74333 -> 111190, elapsed: 00:00:00.1474497, speed: 50,412 mb/s
-// Compression:   QLZ-bin, size: 111190 ->  85842, elapsed: 00:00:00.3202638, speed: 34,718 mb/s
-// Decompression: QLZ-bin, size:  85842 -> 111190, elapsed: 00:00:00.2845554, speed: 30,167 mb/s
-// Compression:   LZF-txt, size: 100000 ->  71201, elapsed: 00:00:00.3851780, speed: 25,962 mb/s
-// Decompression: LZF-txt, size:  71201 -> 100000, elapsed: 00:00:00.1342634, speed: 53,031 mb/s
-// Compression:   QLZ-txt, size: 100000 ->  59138, elapsed: 00:00:00.1580589, speed: 63,268 mb/s
-// Decompression: QLZ-txt, size:  59138 -> 100000, elapsed: 00:00:00.2039518, speed: 28,996 mb/s
+// csc.exe bench.cs LZF.cs QuickLZ.cs 
 
 using System;
+using System.IO;
+using System.IO.Compression;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.IO;
 using System.Diagnostics;
-using System.Collections.Generic;
+using System.Management;
 using Lzf;
 
 class Program
 {
-	const int iterations = 100; //5000;
+	const int iterations = 1000; //5000;
+	const int seed = 1234;
 
 	static void Main()
 	{
+		SystemInfo.DisplaySysInfo();
 		Console.WriteLine("Generating test data...");
 
-		var sample1 = GeneratePseudoBinaryData(new Random(1234));
+		var sample1 = GenerateBinaryData(new Random(seed));
 		Console.WriteLine("Binary: {0} bytes.", sample1.Length);
 
-		var sample2 = GeneratePseudoTextualData(new Random(1234));
+		var sample2 = GenerateTextualData(new Random(seed));
 		Console.WriteLine("Textual: {0} bytes.", sample2.Length);
 
+		var sample3 = GenerateUncompressibleData(new Random(seed));
+		Console.WriteLine("Uncompressible: {0} bytes.", sample3.Length);
+
+		// save files for reference
 		File.WriteAllBytes("bench1.dat", sample1);
 		File.WriteAllBytes("bench2.dat", sample2);
+		File.WriteAllBytes("bench3.dat", sample3);
 
-		Console.WriteLine("Starting benchmark...");
+		Console.WriteLine();
 
-		Benchmark("LZF-bin", iterations, sample1, "bench1.lzf", LzfCompress, LzfDecompress);
-		Benchmark("QLZ-bin", iterations, sample1, "bench1.qlz", QuickLZCompress, QuickLZDecompress);
+		// save compressed data and measure speed
+		Benchmark("LZF, binary data", iterations, sample1, "bench1.lzf", LzfCompress, LzfDecompress);
+		Benchmark("QuickLZ, binary data", iterations, sample1, "bench1.qlz", QuickLZCompress, QuickLZDecompress);
+		Benchmark("DeflateStream, binary data", iterations, sample1, "bench1.dfl", DeflateStreamCompress, DeflateStreamDecompress);
 
-		Benchmark("LZF-txt", iterations, sample2, "bench2.lzf", LzfCompress, LzfDecompress);
-		Benchmark("QLZ-txt", iterations, sample2, "bench2.qlz", QuickLZCompress, QuickLZDecompress);
+		Benchmark("LZF, textual data", iterations, sample2, "bench2.lzf", LzfCompress, LzfDecompress);
+		Benchmark("QuickLZ, textual data", iterations, sample2, "bench2.qlz", QuickLZCompress, QuickLZDecompress);
+		Benchmark("DeflateStream, textual data", iterations, sample2, "bench2.dfl", DeflateStreamCompress, DeflateStreamDecompress);
+
+		Benchmark("LZF, uncompressible data", iterations, sample3, "bench3.lzf", LzfCompress, LzfDecompress);
+		Benchmark("QuickLZ, uncompressible data", iterations, sample3, "bench3.qlz", QuickLZCompress, QuickLZDecompress);
+		Benchmark("DeflateStream, uncompressible data", iterations, sample3, "bench3.dfl", DeflateStreamCompress, DeflateStreamDecompress);
 	}
 
 	static void Benchmark(string name, int iterations, byte[] inputData, string outFileName, Func<byte[], CompressionResult> compress, Func<CompressionResult, int> decompress)
 	{
+		Console.WriteLine("Benchmark name: {0}", name);
+
 		var sw = new Stopwatch();
 		sw.Start();
 		var data = new CompressionResult();
@@ -62,7 +76,7 @@ class Program
 		data.Save(outFileName);
 
 		var speed = iterations * inputData.Length / (sw.Elapsed.TotalMilliseconds > 0 ? sw.Elapsed.TotalMilliseconds : 1) / 1000;
-		Console.WriteLine("Compression:   {0}, size: {1,6} -> {2,6}, elapsed: {3}, speed: {4:#0.000} mb/s", name, inputData.Length, data.Length, sw.Elapsed, speed);
+		Console.WriteLine("Compression:    size: {1,6} -> {2,6}, elapsed: {3}, speed: {4:#0.000} mb/s", name, inputData.Length, data.Length, sw.Elapsed, speed);
 
 		sw = new Stopwatch();
 		sw.Start();
@@ -74,7 +88,8 @@ class Program
 		sw.Stop();
 
 		speed = iterations * data.Length / (sw.Elapsed.TotalMilliseconds > 0 ? sw.Elapsed.TotalMilliseconds : 1) / 1000;
-		Console.WriteLine("Decompression: {0}, size: {1,6} -> {2,6}, elapsed: {3}, speed: {4:#0.000} mb/s", name, data.Length, length, sw.Elapsed, speed);
+		Console.WriteLine("Decompression:  size: {1,6} -> {2,6}, elapsed: {3}, speed: {4:#0.000} mb/s", name, data.Length, length, sw.Elapsed, speed);
+		Console.WriteLine();	
 	}
 
 	class CompressionResult
@@ -82,6 +97,8 @@ class Program
 		public byte[] Data { get; set; }
 
 		public int Length { get; set; }
+
+		public int SourceLength { get; set; }
 
 		public void Save(string fileName)
 		{
@@ -102,7 +119,8 @@ class Program
 		return new CompressionResult
 		{
 			Data = output,
-			Length = size
+			Length = size,
+			SourceLength = data.Length
 		};
 	}
 
@@ -118,7 +136,8 @@ class Program
 		return new CompressionResult
 		{
 			Data = output,
-			Length = output.Length
+			Length = output.Length,
+			SourceLength = data.Length
 		};
 	}
 
@@ -128,14 +147,48 @@ class Program
 		return output.Length;
 	}
 
-	static byte[] GeneratePseudoBinaryData(Random rnd)
+	static CompressionResult DeflateStreamCompress(byte[] data)
+	{
+		using (var output = new MemoryStream())
+		using (var ds = new DeflateStream(output, CompressionMode.Compress))
+		{
+			ds.Write(data, 0, data.Length);
+			ds.Close();
+
+			var outData = output.ToArray();
+			return new CompressionResult
+			{
+				Data = outData,
+				Length = outData.Length,
+				SourceLength = data.Length
+			};
+		}
+	}
+
+	static int DeflateStreamDecompress(CompressionResult data)
+	{
+		using (var input = new MemoryStream(data.Data))
+		using (var ds = new DeflateStream(input, CompressionMode.Decompress))
+		{
+			var br = new BinaryReader(ds);
+			var output = br.ReadBytes(data.SourceLength + 100);
+			return output.Length;
+		}
+	}
+
+	static byte[] GenerateBinaryData(Random rnd)
 	{
 		return GenerateData(rnd, 20000, 30, 0, Byte.MaxValue);
 	}
 
-	static byte[] GeneratePseudoTextualData(Random rnd)
+	static byte[] GenerateTextualData(Random rnd)
 	{
 		return Encoding.Default.GetBytes(new MarkovChainGenerator().Generate(rnd, 100000));
+	}
+
+	static byte[] GenerateUncompressibleData(Random rnd)
+	{
+		return GenerateData(rnd, 200000, 2, 0, Byte.MaxValue);
 	}
 
 	static byte[] GenerateData(Random rnd, int iterations, int maxRepeats, byte min, byte max)
@@ -163,17 +216,17 @@ class Program
 
 			public List<char> Chain { get; set; }
 
-			public const // some pseudo-english text
-				string Sample = "enbere, vers i ther to y bro the gence, and or eep t tur theavin lover ppearised of die?\" " +
-				"\"th \"a maden mive one s yould be led thy, by thite, whorteror tay use ting, and bled pheart per a ll," +
-				"had he s saits h airoad is t or up hed at hith\" saittle wome nenbermer of and th, it moiceso rundrept " +
-				"ttle the scrow!\" was knowithdvancheers tore humbuch ful r abojecte and sll than be to be to hat ht ha " +
-				"verades, thich and by t he a non. \" \"doke unfas, re wasaid eleciden air a d in steand s, wheir for up" +
-				"were, butributenburyiced fielowed dond with aid, fros so hear donistrupte of foug usutsethat overy bry " +
-				"tour d pull mays the causearthe sanothis stmas exand, to d, hather wouch gnitil thow ws of gled thing \"" +
-				"is wheriarssocid sck hing,\" \"hey's, colow hin; feas car he \"even sundress ccepting to ympatartlk-er; " +
-				"for, wento man yo man oldistrson do n ther obe aber irits is his mrs. somet; orsost he un, an't sclais " +
-				"fable havendin wit.\" \"why doorooge thoment as the had to th here ile oined in genily us ma";
+			public static string // some pseudo-english text generated from Christmas Carol by Charles Dickens 
+				Sample = @"enbere, vers i ther to y bro the gence, and or eep t tur theavin lover ppearised of die?`
+				`th `a maden mive one s yould be led thy, by thite, whorteror tay use ting, and bled pheart per a ll,
+				had he s saits h airoad is t or up hed at hith` saittle wome nenbermer of and th, it moiceso rundrept 
+				ttle the scrow!` was knowithdvancheers tore humbuch ful r abojecte and sll than be to be to hat ht ha 
+				verades, thich and by t he a non. ` `doke unfas, re wasaid eleciden air a d in steand s, wheir for up
+				were, butributenburyiced fielowed dond with aid, fros so hear donistrupte of foug usutsethat overy bry 
+				tour d pull mays the causearthe sanothis stmas exand, to d, hather wouch gnitil thow ws of gled thing `
+				is wheriarssocid sck hing,` `hey's, colow hin; feas car he `even sundress ccepting to ympatartlk-er; 
+				for, wento man yo man oldistrson do n ther obe aber irits is his mrs. somet; orsost he un, an't sclais 
+				fable havendin wit.` `why doorooge thoment as the had to th here ile oined in genily us ma".Replace("`", "\"");
 		}
 
 		List<MarkovChain> chains = new List<MarkovChain>();
@@ -224,5 +277,31 @@ class Program
 			return sb.ToString();
 		}
 	}
-}
 
+	public class SystemInfo
+	{
+		public string CpuName { get; private set; }
+
+		public string OperatingSystem { get { return Environment.OSVersion.VersionString; } }
+
+		public bool Is64Bit { get { return Environment.Is64BitProcess; } }
+
+		public SystemInfo()
+		{
+			var searcher = new ManagementObjectSearcher("select * from Win32_Processor");
+			foreach (ManagementObject mo in searcher.Get())
+			{
+				CpuName = Regex.Replace(mo["Name"].ToString(), @"\s+", " ").Trim();
+			}
+		}
+
+		public static void DisplaySysInfo()
+		{
+			var si = new SystemInfo();
+			Console.WriteLine("Cpu: {0}", si.CpuName);
+			Console.WriteLine("Operating System: {0}", si.OperatingSystem);
+			Console.WriteLine("Running in 64-bit process: {0}", si.Is64Bit ? "yes" : "no");
+			Console.WriteLine();
+		}
+	}
+}

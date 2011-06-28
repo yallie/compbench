@@ -1,0 +1,45 @@
+Cpu: Intel(R) Core(TM) i5 CPU M 430 @ 2.27GHz
+Operating System: Microsoft Windows NT 6.1.7601 Service Pack 1
+Running in 64-bit process: yes
+
+Generating test data...
+Binary: 111190 bytes.
+Textual: 100000 bytes.
+Uncompressible: 100066 bytes.
+
+Benchmark name: LZF, binary data
+Compression:    size: 111190 ->  74333, elapsed: 00:00:03.9536212, speed: 28,124 mb/s
+Decompression:  size:  74333 -> 111190, elapsed: 00:00:01.7058944, speed: 43,574 mb/s
+
+Benchmark name: QuickLZ, binary data
+Compression:    size: 111190 ->  85842, elapsed: 00:00:03.4674944, speed: 32,066 mb/s
+Decompression:  size:  85842 -> 111190, elapsed: 00:00:04.1578805, speed: 20,646 mb/s
+
+Benchmark name: DeflateStream, binary data
+Compression:    size: 111190 ->  47044, elapsed: 00:00:14.5515179, speed: 7,641 mb/s
+Decompression:  size:  47044 -> 111190, elapsed: 00:00:05.3108349, speed: 8,858 mb/s
+
+Benchmark name: LZF, textual data
+Compression:    size: 100000 ->  71216, elapsed: 00:00:03.1712765, speed: 31,533 mb/s
+Decompression:  size:  71216 -> 100000, elapsed: 00:00:01.4851531, speed: 47,952 mb/s
+
+Benchmark name: QuickLZ, textual data
+Compression:    size: 100000 ->  59508, elapsed: 00:00:01.7766889, speed: 56,284 mb/s
+Decompression:  size:  59508 -> 100000, elapsed: 00:00:02.8002814, speed: 21,251 mb/s
+
+Benchmark name: DeflateStream, textual data
+Compression:    size: 100000 ->  44016, elapsed: 00:00:16.8943640, speed: 5,919 mb/s
+Decompression:  size:  44016 -> 100000, elapsed: 00:00:04.9884789, speed: 8,824 mb/s
+
+Benchmark name: LZF, uncompressible data
+Compression:    size: 100066 -> 103187, elapsed: 00:00:04.2948397, speed: 23,299 mb/s
+Decompression:  size: 103187 -> 100066, elapsed: 00:00:00.7515444, speed: 137,300 mb/s
+
+Benchmark name: QuickLZ, uncompressible data
+Compression:    size: 100066 -> 100075, elapsed: 00:00:01.6548092, speed: 60,470 mb/s
+Decompression:  size: 100075 -> 100066, elapsed: 00:00:00.1056689, speed: 947,062 mb/s
+
+Benchmark name: DeflateStream, uncompressible data
+Compression:    size: 100066 -> 100196, elapsed: 00:00:08.5341998, speed: 11,725 mb/s
+Decompression:  size: 100196 -> 100066, elapsed: 00:00:00.2538544, speed: 394,699 mb/s
+
