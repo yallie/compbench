@@ -23,7 +23,7 @@ using Lzf;
 
 class Program
 {
-	const int iterations = 1000; //5000;
+	const int iterations = 5000;
 	const int seed = 1234;
 
 	static void Main()
@@ -292,6 +292,7 @@ class Program
 			foreach (ManagementObject mo in searcher.Get())
 			{
 				CpuName = Regex.Replace(mo["Name"].ToString(), @"\s+", " ").Trim();
+				break;
 			}
 		}
 
