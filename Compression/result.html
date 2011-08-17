@@ -1,0 +1,64 @@
+Excellent library! (more accurate benchmarks included)
+
+Hi!
+
+<p>C# LZF is an excellent piece of code. Special thanks for the BSD-style licensing conditions.</p>
+
+<p>Although the original benchmarks are obviously wrong, LZF's real numbers still look quite competitive:</p>
+
+<table>
+<tr>
+<td RowSpan=2>Library<td>
+<td ColSpan=3>Textual data, 100000 bytes</td>
+<td ColSpan=3>Binary data, 111190 bytes</td>
+<td ColSpan=3>Uncompressible data, 100066 bytes</td>
+</tr>
+<tr>
+<td>Compressed size</td>
+<td>Compression speed</td>
+<td>Decompression speed</td>
+<td>Compressed size</td>
+<td>Compression speed</td>
+<td>Decompression speed</td>
+<td>Compressed size</td>
+<td>Compression speed</td>
+<td>Decompression speed</td>
+</tr>
+<tr>
+<!-- bgcolor="faa" / bgcolor="9f9"-->
+<td>LZF</td>
+<td bgcolor="faa">71216</td>
+<td>31</td>
+<td bgcolor="9f9">47</td>
+<td>74333</td>
+<td>28</td>
+<td bgcolor="9f9">43</td>
+<td bgcolor="faa">103187</td>
+<td>22</td>
+<td bgcolor="faa">157</td>
+</tr>
+<tr>
+<td>QuickLZ 1.5.0</td>
+<td>59508</td>
+<td bgcolor="9f9">56</td>
+<td>21</td>
+<td bgcolor="faa">85842</td>
+<td bgcolor="9f9">32</td>
+<td>20</td>
+<td bgcolor="9f9">100075</td>
+<td bgcolor="9f9">69</td>
+<td bgcolor="9f9">1048</td>
+</tr>
+<tr>
+<td>DeflateStream</td>
+<td bgcolor="9f9">44016</td>
+<td bgcolor="faa">5</td>
+<td bgcolor="faa">8</td>
+<td bgcolor="9f9">47044</td>
+<td bgcolor="faa">7</td>
+<td bgcolor="faa">8</td>
+<td>100196</td>
+<td bgcolor="faa">13</td>
+<td>431</td>
+</tr>
+</table>
