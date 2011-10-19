@@ -206,6 +206,57 @@ public static class iROLZ
             }
         }
     }
+
+    public static byte[] IrolzCompress(byte[] source)
+    {
+        var inStream = new MemoryStream(source);
+        var outStream = new MemoryStream();
+        
+        var dictionary = new Dictionary(PREFIX_SIZE, HISTORY_BUFFER_BITLEN);
+        var ppm = new TPPM(inStream, outStream);
+
+        //we read and process data by large chunks
+        var data = new byte[CHUNK_SIZE];
+        while (true) 
+        {          
+            int data_size = inStream.Read(data, 0, CHUNK_SIZE);
+            bool isLast = false;
+            if (data_size < CHUNK_SIZE) isLast = true;
+            exetransform(data, 1, data_size);
+            dictionary.eraseData();
+            bool res_flag = process_compress(ppm, dictionary, data, data_size, isLast);
+            if (isLast) break;
+        }
+
+        var retval = outStream.ToArray();
+        outStream.Close();
+        return retval;
+    }
+
+    public static byte[] IrolzDecompress(byte[] source)
+    {
+        var inStream = new MemoryStream(source);
+        var outStream = new MemoryStream();
+
+        Dictionary dictionary = new Dictionary(PREFIX_SIZE, HISTORY_BUFFER_BITLEN);
+        TPPM ppm = new TPPM(inStream, outStream);
+        ppm.decoder.Init();
+        //we decode data by large chunks
+        byte[] data = new byte[CHUNK_SIZE];
+        int data_size = CHUNK_SIZE;
+        while (true) {
+            dictionary.eraseData();
+            int status = process_decompress(ppm, dictionary, data, out data_size);
+            exetransform(data, 0, data_size);
+            outStream.Write(data, 0, data_size);
+            if (status == 0) break;
+        }
+
+        var retval = outStream.ToArray();
+        outStream.Close();
+        return retval;
+    }
+
     public static bool irolz_compress(string inFile, string outFile)
     {
         if (!File.Exists(inFile))
@@ -361,9 +412,9 @@ public class TPredictor {
 //This is Matt Mahoney's binary entropy coder from FPAQ0
 public class BinaryEncoder 
 {
-    private FileStream m_outStream = null;
+    private Stream m_outStream = null;
     private uint x1, x2;
-	public BinaryEncoder(FileStream outStream) 
+	public BinaryEncoder(Stream outStream) 
     {
         m_outStream = outStream;
         x1 = 0;
@@ -393,9 +444,9 @@ public class BinaryEncoder
 //This is Matt Mahoney's binary entropy decoder from FPAQ0
 public class BinaryDecoder 
 {
-    private FileStream m_inStream = null;
+    private Stream m_inStream = null;
     private uint x1, x2, x;
-    public BinaryDecoder(FileStream inStream)
+    public BinaryDecoder(Stream inStream)
     {
         m_inStream = inStream;
         x1 = 0;
@@ -433,7 +484,7 @@ public class TPPM {
     private TPredictor[] pbit = null; 
     public BinaryEncoder encoder = null; 
     public  BinaryDecoder decoder = null; 
-    public TPPM(FileStream inStream, FileStream outStream)
+    public TPPM(Stream inStream, Stream outStream)
     {
         pbit = new TPredictor[2]; 
         pbit[0] = new TPredictor();
@@ -537,7 +588,7 @@ public class TPPM {
 
 class Entry
 {
-    static void Main(string[] args)
+    static void DisabledMain(string[] args)
     {
         Console.WriteLine("Program name: iROLZ, author: Andrew Polar under GPL ver. 3. LICENSE");
         if (args.Length != 3)

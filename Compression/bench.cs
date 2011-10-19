@@ -4,11 +4,12 @@
 // * C# LZF: http://csharplzfcompression.codeplex.com
 // * QuickLZ 1.5.0 final: http://quicklz.com
 // * DeflateStream: http://msdn.microsoft.com/library/system.io.compression.deflatestream.aspx
+// * iROLZ: http://ezcodesample.com/rolz/rolz_article.html
 //
 // Written Jun 28, 2011 by yallie@yandex.ru 
 //--------------------------------------------------------------------------------------------
 
-// csc.exe bench.cs LZF.cs QuickLZ.cs 
+// csc.exe bench.cs LZF.cs QuickLZ.cs iROLZ.cs
 
 using System;
 using System.IO;
@@ -51,14 +52,17 @@ class Program
 		Benchmark("LZF, binary data", iterations, sample1, "bench1.lzf", LzfCompress, LzfDecompress);
 		Benchmark("QuickLZ, binary data", iterations, sample1, "bench1.qlz", QuickLZCompress, QuickLZDecompress);
 		Benchmark("DeflateStream, binary data", iterations, sample1, "bench1.dfl", DeflateStreamCompress, DeflateStreamDecompress);
+		Benchmark("iROLZ, binary data", iterations, sample1, "bench1.rlz", IrolzCompress, IrolzDecompress);
 
 		Benchmark("LZF, textual data", iterations, sample2, "bench2.lzf", LzfCompress, LzfDecompress);
 		Benchmark("QuickLZ, textual data", iterations, sample2, "bench2.qlz", QuickLZCompress, QuickLZDecompress);
 		Benchmark("DeflateStream, textual data", iterations, sample2, "bench2.dfl", DeflateStreamCompress, DeflateStreamDecompress);
+		Benchmark("iROLZ, textual data", iterations, sample2, "bench2.rlz", IrolzCompress, IrolzDecompress);
 
 		Benchmark("LZF, uncompressible data", iterations, sample3, "bench3.lzf", LzfCompress, LzfDecompress);
 		Benchmark("QuickLZ, uncompressible data", iterations, sample3, "bench3.qlz", QuickLZCompress, QuickLZDecompress);
 		Benchmark("DeflateStream, uncompressible data", iterations, sample3, "bench3.dfl", DeflateStreamCompress, DeflateStreamDecompress);
+		Benchmark("iROLZ, uncompressible data", iterations, sample3, "bench3.rlz", IrolzCompress, IrolzDecompress);
 	}
 
 	static void Benchmark(string name, int iterations, byte[] inputData, string outFileName, Func<byte[], CompressionResult> compress, Func<CompressionResult, int> decompress)
@@ -108,6 +112,23 @@ class Program
 				fs.Close();
 			}
 		}
+	}
+
+	static CompressionResult IrolzCompress(byte[] data)
+	{
+		var output = iROLZ.IrolzCompress(data);
+		return new CompressionResult
+		{
+			Data = output,
+			Length = output.Length,
+			SourceLength = data.Length
+		};
+	}
+
+	static int IrolzDecompress(CompressionResult data)
+	{
+		var output = iROLZ.IrolzDecompress(data.Data);
+		return output.Length;
 	}
 
 	static LZF lzf = new LZF();
