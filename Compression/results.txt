@@ -8,64 +8,64 @@ Textual: 100000 bytes.
 Uncompressible: 100066 bytes.
 
 Benchmark name: LZF, binary data
-Compression:    size: 111190 ->  74333, elapsed: 00:00:00.4123127, speed: 26,967 mb/s
-Decompression:  size:  74333 -> 111190, elapsed: 00:00:00.1440110, speed: 51,616 mb/s
+Compression:    size: 111190 ->  74333, elapsed: 00:00:04.0019019, speed: 27,784 mb/s
+Decompression:  size:  74333 -> 111190, elapsed: 00:00:01.4219474, speed: 52,275 mb/s
 
 Benchmark name: QuickLZ, binary data
-Compression:    size: 111190 ->  85842, elapsed: 00:00:00.3127757, speed: 35,549 mb/s
-Decompression:  size:  85842 -> 111190, elapsed: 00:00:00.2796020, speed: 30,701 mb/s
+Compression:    size: 111190 ->  85842, elapsed: 00:00:03.0744547, speed: 36,166 mb/s
+Decompression:  size:  85842 -> 111190, elapsed: 00:00:02.7475151, speed: 31,244 mb/s
 
 Benchmark name: DeflateStream, binary data
-Compression:    size: 111190 ->  47044, elapsed: 00:00:01.3437990, speed: 8,274 mb/s
-Decompression:  size:  47044 -> 111190, elapsed: 00:00:00.4587736, speed: 10,254 mb/s
+Compression:    size: 111190 ->  47044, elapsed: 00:00:13.3125095, speed: 8,352 mb/s
+Decompression:  size:  47044 -> 111190, elapsed: 00:00:04.5414235, speed: 10,359 mb/s
 
 Benchmark name: MiniLZO, binary data
-Compression:    size: 111190 ->  58049, elapsed: 00:00:00.3356085, speed: 33,131 mb/s
-Decompression:  size:  58049 -> 111190, elapsed: 00:00:00.1648094, speed: 35,222 mb/s
+Compression:    size: 111190 ->  58049, elapsed: 00:00:03.1962858, speed: 34,787 mb/s
+Decompression:  size:  58049 -> 111190, elapsed: 00:00:01.5248625, speed: 38,068 mb/s
 
 Benchmark name: iROLZ, binary data
-Compression:    size: 111190 ->  43173, elapsed: 00:00:27.0069665, speed: 0,412 mb/s
-Decompression:  size:  43173 -> 111190, elapsed: 00:00:24.5503020, speed: 0,176 mb/s
+Compression:    size: 111190 ->  43173, elapsed: 00:00:26.5787308, speed: 0,418 mb/s
+Decompression:  size:  43173 -> 111190, elapsed: 00:00:24.2930947, speed: 0,178 mb/s
 
 Benchmark name: LZF, textual data
-Compression:    size: 100000 ->  71216, elapsed: 00:00:00.3710896, speed: 26,948 mb/s
-Decompression:  size:  71216 -> 100000, elapsed: 00:00:00.1280640, speed: 55,610 mb/s
+Compression:    size: 100000 ->  71216, elapsed: 00:00:03.6776556, speed: 27,191 mb/s
+Decompression:  size:  71216 -> 100000, elapsed: 00:00:01.2970992, speed: 54,904 mb/s
 
 Benchmark name: QuickLZ, textual data
-Compression:    size: 100000 ->  59508, elapsed: 00:00:00.1557337, speed: 64,212 mb/s
-Decompression:  size:  59508 -> 100000, elapsed: 00:00:00.1985531, speed: 29,971 mb/s
+Compression:    size: 100000 ->  59508, elapsed: 00:00:01.5424725, speed: 64,831 mb/s
+Decompression:  size:  59508 -> 100000, elapsed: 00:00:01.9797672, speed: 30,058 mb/s
 
 Benchmark name: DeflateStream, textual data
-Compression:    size: 100000 ->  44016, elapsed: 00:00:01.3762656, speed: 7,266 mb/s
-Decompression:  size:  44016 -> 100000, elapsed: 00:00:00.4556190, speed: 9,661 mb/s
+Compression:    size: 100000 ->  44016, elapsed: 00:00:13.6569871, speed: 7,322 mb/s
+Decompression:  size:  44016 -> 100000, elapsed: 00:00:04.5450642, speed: 9,684 mb/s
 
 Benchmark name: MiniLZO, textual data
-Compression:    size: 100000 ->  64721, elapsed: 00:00:00.3389235, speed: 29,505 mb/s
-Decompression:  size:  64721 -> 100000, elapsed: 00:00:00.1510110, speed: 42,858 mb/s
+Compression:    size: 100000 ->  64721, elapsed: 00:00:03.3089523, speed: 30,221 mb/s
+Decompression:  size:  64721 -> 100000, elapsed: 00:00:01.4905866, speed: 43,420 mb/s
 
 Benchmark name: iROLZ, textual data
-Compression:    size: 100000 ->  37424, elapsed: 00:00:26.1102469, speed: 0,383 mb/s
-Decompression:  size:  37424 -> 100000, elapsed: 00:00:22.2463743, speed: 0,168 mb/s
+Compression:    size: 100000 ->  37424, elapsed: 00:00:25.7411207, speed: 0,388 mb/s
+Decompression:  size:  37424 -> 100000, elapsed: 00:00:22.0025419, speed: 0,170 mb/s
 
 Benchmark name: LZF, uncompressible data
-Compression:    size: 100066 -> 103187, elapsed: 00:00:00.5662462, speed: 17,672 mb/s
-Decompression:  size: 103187 -> 100066, elapsed: 00:00:00.0625180, speed: 165,052 mb/s
+Compression:    size: 100066 -> 103187, elapsed: 00:00:05.6007573, speed: 17,867 mb/s
+Decompression:  size: 103187 -> 100066, elapsed: 00:00:00.6103348, speed: 169,066 mb/s
 
 Benchmark name: QuickLZ, uncompressible data
-Compression:    size: 100066 -> 100075, elapsed: 00:00:00.1629165, speed: 61,422 mb/s
-Decompression:  size: 100075 -> 100066, elapsed: 00:00:00.0254144, speed: 393,773 mb/s
+Compression:    size: 100066 -> 100075, elapsed: 00:00:01.6402221, speed: 61,008 mb/s
+Decompression:  size: 100075 -> 100066, elapsed: 00:00:00.2287732, speed: 437,442 mb/s
 
 Benchmark name: DeflateStream, uncompressible data
-Compression:    size: 100066 -> 100196, elapsed: 00:00:00.7919020, speed: 12,636 mb/s
-Decompression:  size: 100196 -> 100066, elapsed: 00:00:00.0465439, speed: 215,272 mb/s
+Compression:    size: 100066 -> 100196, elapsed: 00:00:08.0316570, speed: 12,459 mb/s
+Decompression:  size: 100196 -> 100066, elapsed: 00:00:00.4521960, speed: 221,576 mb/s
 
 Benchmark name: MiniLZO, uncompressible data
-Compression:    size: 100066 -> 100468, elapsed: 00:00:00.6147250, speed: 16,278 mb/s
-Decompression:  size: 100468 -> 100066, elapsed: 00:00:00.0727466, speed: 138,107 mb/s
+Compression:    size: 100066 -> 100468, elapsed: 00:00:06.1467759, speed: 16,279 mb/s
+Decompression:  size: 100468 -> 100066, elapsed: 00:00:00.7211821, speed: 139,310 mb/s
 
 Benchmark name: iROLZ, uncompressible data
-Compression:    size: 100066 -> 101438, elapsed: 00:00:31.4290070, speed: 0,318 mb/s
-Decompression:  size: 101438 -> 100066, elapsed: 00:00:31.3453743, speed: 0,324 mb/s
+Compression:    size: 100066 -> 101438, elapsed: 00:00:30.7744352, speed: 0,325 mb/s
+Decompression:  size: 101438 -> 100066, elapsed: 00:00:30.8421047, speed: 0,329 mb/s
 
 -----------------------------------------------------------------------------------------
 
