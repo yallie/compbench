@@ -1,3 +1,74 @@
+Cpu: AMD Athlon(tm) 64 X2 Dual Core Processor 4000+
+Operating System: Microsoft Windows NT 5.1.2600 Service Pack 3
+Running in 64-bit process: no
+
+Generating test data...
+Binary: 111190 bytes.
+Textual: 100000 bytes.
+Uncompressible: 100066 bytes.
+
+Benchmark name: LZF, binary data
+Compression:    size: 111190 ->  74333, elapsed: 00:00:00.4123127, speed: 26,967 mb/s
+Decompression:  size:  74333 -> 111190, elapsed: 00:00:00.1440110, speed: 51,616 mb/s
+
+Benchmark name: QuickLZ, binary data
+Compression:    size: 111190 ->  85842, elapsed: 00:00:00.3127757, speed: 35,549 mb/s
+Decompression:  size:  85842 -> 111190, elapsed: 00:00:00.2796020, speed: 30,701 mb/s
+
+Benchmark name: DeflateStream, binary data
+Compression:    size: 111190 ->  47044, elapsed: 00:00:01.3437990, speed: 8,274 mb/s
+Decompression:  size:  47044 -> 111190, elapsed: 00:00:00.4587736, speed: 10,254 mb/s
+
+Benchmark name: MiniLZO, binary data
+Compression:    size: 111190 ->  58049, elapsed: 00:00:00.3356085, speed: 33,131 mb/s
+Decompression:  size:  58049 -> 111190, elapsed: 00:00:00.1648094, speed: 35,222 mb/s
+
+Benchmark name: iROLZ, binary data
+Compression:    size: 111190 ->  43173, elapsed: 00:00:27.0069665, speed: 0,412 mb/s
+Decompression:  size:  43173 -> 111190, elapsed: 00:00:24.5503020, speed: 0,176 mb/s
+
+Benchmark name: LZF, textual data
+Compression:    size: 100000 ->  71216, elapsed: 00:00:00.3710896, speed: 26,948 mb/s
+Decompression:  size:  71216 -> 100000, elapsed: 00:00:00.1280640, speed: 55,610 mb/s
+
+Benchmark name: QuickLZ, textual data
+Compression:    size: 100000 ->  59508, elapsed: 00:00:00.1557337, speed: 64,212 mb/s
+Decompression:  size:  59508 -> 100000, elapsed: 00:00:00.1985531, speed: 29,971 mb/s
+
+Benchmark name: DeflateStream, textual data
+Compression:    size: 100000 ->  44016, elapsed: 00:00:01.3762656, speed: 7,266 mb/s
+Decompression:  size:  44016 -> 100000, elapsed: 00:00:00.4556190, speed: 9,661 mb/s
+
+Benchmark name: MiniLZO, textual data
+Compression:    size: 100000 ->  64721, elapsed: 00:00:00.3389235, speed: 29,505 mb/s
+Decompression:  size:  64721 -> 100000, elapsed: 00:00:00.1510110, speed: 42,858 mb/s
+
+Benchmark name: iROLZ, textual data
+Compression:    size: 100000 ->  37424, elapsed: 00:00:26.1102469, speed: 0,383 mb/s
+Decompression:  size:  37424 -> 100000, elapsed: 00:00:22.2463743, speed: 0,168 mb/s
+
+Benchmark name: LZF, uncompressible data
+Compression:    size: 100066 -> 103187, elapsed: 00:00:00.5662462, speed: 17,672 mb/s
+Decompression:  size: 103187 -> 100066, elapsed: 00:00:00.0625180, speed: 165,052 mb/s
+
+Benchmark name: QuickLZ, uncompressible data
+Compression:    size: 100066 -> 100075, elapsed: 00:00:00.1629165, speed: 61,422 mb/s
+Decompression:  size: 100075 -> 100066, elapsed: 00:00:00.0254144, speed: 393,773 mb/s
+
+Benchmark name: DeflateStream, uncompressible data
+Compression:    size: 100066 -> 100196, elapsed: 00:00:00.7919020, speed: 12,636 mb/s
+Decompression:  size: 100196 -> 100066, elapsed: 00:00:00.0465439, speed: 215,272 mb/s
+
+Benchmark name: MiniLZO, uncompressible data
+Compression:    size: 100066 -> 100468, elapsed: 00:00:00.6147250, speed: 16,278 mb/s
+Decompression:  size: 100468 -> 100066, elapsed: 00:00:00.0727466, speed: 138,107 mb/s
+
+Benchmark name: iROLZ, uncompressible data
+Compression:    size: 100066 -> 101438, elapsed: 00:00:31.4290070, speed: 0,318 mb/s
+Decompression:  size: 101438 -> 100066, elapsed: 00:00:31.3453743, speed: 0,324 mb/s
+
+-----------------------------------------------------------------------------------------
+
 Cpu: Intel(R) Core(TM) i5 CPU M 430 @ 2.27GHz
 Operating System: Microsoft Windows NT 6.1.7601 Service Pack 1
 Running in 64-bit process: yes
