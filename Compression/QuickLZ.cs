@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+namespace QuickLZSharp {
 static class QuickLZ
 {
     public const int QLZ_VERSION_MAJOR = 1;
@@ -480,3 +481,4 @@ static class QuickLZ
     }
 }
 
+}
