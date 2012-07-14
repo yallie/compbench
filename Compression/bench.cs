@@ -9,7 +9,8 @@
 // Written Jun 28, 2011 by yallie@yandex.ru 
 //--------------------------------------------------------------------------------------------
 
-// csc.exe bench.cs LZF.cs QuickLZ.cs iROLZ.cs MiniLZOPort.cs
+// csc.exe bench.cs LZF.cs LZ4.cs QuickLZ.cs iROLZ.cs MiniLZOPort.cs /unsafe
+// C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe bench.cs LZF.cs LZ4.cs QuickLZ.cs iROLZ.cs MiniLZOPort.cs /unsafe
 
 using System;
 using System.IO;
@@ -22,6 +23,8 @@ using System.Diagnostics;
 using System.Management;
 using Lzf;
 using BrainTechLLC;
+using QuickLZSharp;
+using LZ4Sharp;
 
 class Program
 {
@@ -51,18 +54,21 @@ class Program
 
 		// save compressed data and measure speed
 		Benchmark("LZF, binary data", iterations, sample1, "bench1.lzf", LzfCompress, LzfDecompress);
+		Benchmark("LZ4, binary data", iterations, sample1, "bench1.lz4", Lz4Compress, Lz4Decompress);
 		Benchmark("QuickLZ, binary data", iterations, sample1, "bench1.qlz", QuickLZCompress, QuickLZDecompress);
 		Benchmark("DeflateStream, binary data", iterations, sample1, "bench1.dfl", DeflateStreamCompress, DeflateStreamDecompress);
 		Benchmark("MiniLZO, binary data", iterations, sample1, "bench1.mlz", MiniLzoCompress, MiniLzoDecompress);
 		Benchmark("iROLZ, binary data", iterations / 10, sample1, "bench1.rlz", IrolzCompress, IrolzDecompress);
 
 		Benchmark("LZF, textual data", iterations, sample2, "bench2.lzf", LzfCompress, LzfDecompress);
+		Benchmark("LZ4, textual data", iterations, sample2, "bench2.lz4", Lz4Compress, Lz4Decompress);
 		Benchmark("QuickLZ, textual data", iterations, sample2, "bench2.qlz", QuickLZCompress, QuickLZDecompress);
 		Benchmark("DeflateStream, textual data", iterations, sample2, "bench2.dfl", DeflateStreamCompress, DeflateStreamDecompress);
 		Benchmark("MiniLZO, textual data", iterations, sample2, "bench2.mlz", MiniLzoCompress, MiniLzoDecompress);
 		Benchmark("iROLZ, textual data", iterations / 10, sample2, "bench2.rlz", IrolzCompress, IrolzDecompress);
 
 		Benchmark("LZF, uncompressible data", iterations, sample3, "bench3.lzf", LzfCompress, LzfDecompress);
+		Benchmark("LZ4, uncompressible data", iterations, sample3, "bench3.lz4", Lz4Compress, Lz4Decompress);
 		Benchmark("QuickLZ, uncompressible data", iterations, sample3, "bench3.qlz", QuickLZCompress, QuickLZDecompress);
 		Benchmark("DeflateStream, uncompressible data", iterations, sample3, "bench3.dfl", DeflateStreamCompress, DeflateStreamDecompress);
 		Benchmark("MiniLZO, uncompressible data", iterations, sample3, "bench3.mlz", MiniLzoCompress, MiniLzoDecompress);
@@ -170,6 +176,27 @@ class Program
 	{
 		var output = new byte[data.Length * 2];
 		return lzf.Decompress(data.Data, data.Length, output, output.Length);
+	}
+
+	static ILZ4Compressor Lz4c = LZ4CompressorFactory.CreateNew();
+
+   static ILZ4Decompressor Lz4d = LZ4DecompressorFactory.CreateNew();
+
+	static CompressionResult Lz4Compress(byte[] data)
+	{
+		var output = Lz4c.Compress(data);
+		return new CompressionResult
+		{
+			Data = output,
+			Length = output.Length,
+			SourceLength = data.Length
+		};
+	}
+
+	static int Lz4Decompress(CompressionResult data)
+	{
+		var output = Lz4d.Decompress(data.Data);
+		return output.Length;
 	}
 
 	static CompressionResult QuickLZCompress(byte[] data)
