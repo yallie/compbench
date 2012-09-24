@@ -2,9 +2,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Diagnostics;
+using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 
 namespace LZ4Sharp
 {
@@ -27,6 +29,95 @@ namespace LZ4Sharp
         void DecompressKnownSize(byte[] compressed, byte[] decompressed);
         int DecompressKnownSize(byte[] compressed, byte[] decompressedBuffer, int decompressedSize);
     }
+
+    /// <summary>
+    /// Static LZ4 Compression and Decompression. This is threadsafe because it creates new instances of the
+    /// compression/decompression classes for each method call.
+    /// It is recommended to use LZ4Compressor and LZ4Decompressor for repeated compressing/decompressing for speed and less memory allocations.
+    /// </summary>
+    public static unsafe class LZ4
+    {
+        public static byte[] Compress(byte[] source)
+        {
+            return LZ4CompressorFactory.CreateNew().Compress(source);
+        }
+
+        /// <summary>
+        /// Calculate the max compressed byte[] size given the size of the uncompressed byte[]
+        /// </summary>
+        /// <param name="uncompressedLength">Length of the uncompressed data</param>
+        /// <returns>The maximum required size in bytes of the compressed data</returns>
+        public static int CalculateMaxCompressedLength(int uncompressedLength)
+        {
+            return LZ4CompressorFactory.CreateNew().CalculateMaxCompressedLength(uncompressedLength);
+        }
+
+        /// <summary>
+        /// Compress source into dest returning compressed length
+        /// </summary>
+        /// <param name="source">uncompressed data</param>
+        /// <param name="dest">array into which source will be compressed</param>
+        /// <returns>compressed length</returns>
+        public static int Compress(byte[] source, byte[] dest)
+        {
+            return LZ4CompressorFactory.CreateNew().Compress(source, dest);
+        }
+
+        /// <summary>
+        /// Compress source into dest returning compressed length
+        /// </summary>
+        /// <param name="source">uncompressed data</param>
+        /// <param name="srcOffset">offset in source array where reading will start</param>
+        /// <param name="count">count of bytes in source array to compress</param>
+        /// <param name="dest">array into which source will be compressed</param>
+        /// <param name="dstOffset">start index in dest array where writing will start</param>
+        /// <returns>compressed length</returns>
+        public static int Compress(byte[] source, int srcOffset, int count, byte[] dest, int dstOffset)
+        {
+            return LZ4CompressorFactory.CreateNew().Compress(source, srcOffset, count, dest, dstOffset);
+        }
+
+
+        public static void DecompressKnownSize(byte[] compressed, byte[] decompressed)
+        {
+            LZ4DecompressorFactory.CreateNew().DecompressKnownSize(compressed, decompressed);
+        }
+
+        public static int DecompressKnownSize(byte[] compressed, byte[] decompressedBuffer, int decompressedSize)
+        {
+            return LZ4DecompressorFactory.CreateNew().DecompressKnownSize(compressed, decompressedBuffer, decompressedSize);
+        }
+
+        public static int DecompressKnownSize(byte* compressed, byte* decompressedBuffer, int decompressedSize)
+        {
+            return LZ4DecompressorFactory.CreateNew().DecompressKnownSize(compressed, decompressedBuffer, decompressedSize);
+        }
+
+        public static byte[] Decompress(byte[] compressed)
+        {
+            return LZ4DecompressorFactory.CreateNew().Decompress(compressed);
+        }
+
+        public static int Decompress(byte[] compressed, byte[] decompressedBuffer)
+        {
+            return LZ4DecompressorFactory.CreateNew().Decompress(compressed, decompressedBuffer);
+        }
+
+        public static int Decompress(byte[] compressedBuffer, byte[] decompressedBuffer, int compressedSize)
+        {
+            return LZ4DecompressorFactory.CreateNew().Decompress(compressedBuffer, decompressedBuffer, compressedSize);
+        }
+
+        public static int Decompress(
+            byte* compressedBuffer,
+            byte* decompressedBuffer,
+            int compressedSize,
+            int maxDecompressedSize)
+        {
+            return LZ4DecompressorFactory.CreateNew().Decompress(compressedBuffer, decompressedBuffer, compressedSize, maxDecompressedSize);
+        }
+    }
+
 
     /// <summary>
     /// Class for compressing a byte array into an LZ4 byte array.
@@ -115,8 +206,8 @@ namespace LZ4Sharp
             fixed (byte* d = dest)
             {
                 if (source.Length < (int)LZ4_64KLIMIT)
-                    return Compress64K(s, d, source.Length);
-                return Compress(s, d, source.Length);
+                    return Compress64K(s, d, source.Length, dest.Length);
+                return Compress(s, d, source.Length, dest.Length);
             }
         }
 
@@ -135,12 +226,12 @@ namespace LZ4Sharp
             fixed (byte* d = &dest[dstOffset])
             {
                 if (source.Length < (int)LZ4_64KLIMIT)
-                    return Compress64K(s, d, count);
-                return Compress(s, d, count);
+                    return Compress64K(s, d, count, dest.Length - dstOffset);
+                return Compress(s, d, count, dest.Length - dstOffset);
             }
         }
 
-        int Compress(byte* source, byte* dest, int isize)
+        int Compress(byte* source, byte* dest, int isize, int maxOutputSize)
         {
             fixed (byte* hashTablePtr = m_HashTable)
             fixed (byte* deBruijnBytePos = DeBruijnBytePos)
@@ -155,6 +246,7 @@ namespace LZ4Sharp
                 byte* iend = ip + isize;
                 byte* mflimit = iend - MFLIMIT;
                 byte* matchlimit = (iend - LASTLITERALS);
+    byte* oend = dest + maxOutputSize;
 
 
                 byte* op = (byte*)dest;
@@ -239,7 +331,7 @@ namespace LZ4Sharp
                 _endCount:
 
                     len = (int)(ip - anchor);
-
+  if (op + (1 + LASTLITERALS) + (len>>8) >= oend) return 0; // Check output limit
                     // Encode MatchLength
                     if (len >= (int)LZ4Util.ML_MASK) { *token += (byte)LZ4Util.ML_MASK; len -= (byte)LZ4Util.ML_MASK; for (; len > 509; len -= 510) { *op++ = 255; *op++ = 255; } if (len > 254) { len -= 255; *op++ = 255; } *op++ = (byte)len; }
                     else *token += (byte)len;
@@ -264,6 +356,7 @@ namespace LZ4Sharp
                 // Encode Last Literals
                 {
                     int lastRun = (int)(iend - anchor);
+  if (((byte*)op - dest) + lastRun + 1 + ((lastRun-15)/255) >= maxOutputSize) return 0;
                     if (lastRun >= (int)LZ4Util.RUN_MASK) { *op++ = (byte)(LZ4Util.RUN_MASK << LZ4Util.ML_BITS); lastRun -= (byte)LZ4Util.RUN_MASK; for (; lastRun > 254; lastRun -= 255) *op++ = 255; *op++ = (byte)lastRun; }
                     else *op++ = (byte)(lastRun << LZ4Util.ML_BITS);
                     LZ4Util.CopyMemory(op, anchor, iend - anchor);
@@ -286,7 +379,7 @@ namespace LZ4Sharp
 
 
 
-        int Compress64K(byte* source, byte* dest, int isize)
+        int Compress64K(byte* source, byte* dest, int isize, int maxOutputSize)
         {
             fixed (byte* hashTablePtr = m_HashTable)
             fixed (byte* deBruijnBytePos = DeBruijnBytePos)
@@ -301,6 +394,7 @@ namespace LZ4Sharp
                 byte* mflimit = iend - MFLIMIT;
                 byte* matchlimit = (iend - LASTLITERALS);
                 byte* op = (byte*)dest;
+    byte* oend = dest + maxOutputSize;
 
                 int len, length;
                 const int skipStrength = SKIPSTRENGTH;
@@ -342,6 +436,7 @@ namespace LZ4Sharp
                     // Encode Literal Length
                     length = (int)(ip - anchor);
                     token = op++;
+  if (op + length + (2 + 1 + LASTLITERALS) + (length>>8) >= oend) return 0; // Check output limit
                     if (length >= (int)LZ4Util.RUN_MASK) { *token = (byte)(LZ4Util.RUN_MASK << LZ4Util.ML_BITS); len = (int)(length - LZ4Util.RUN_MASK); for (; len > 254; len -= 255) *op++ = 255; *op++ = (byte)len; }
                     else *token = (byte)(length << LZ4Util.ML_BITS);
 
@@ -400,6 +495,7 @@ namespace LZ4Sharp
             _last_literals:
                 {
                     int lastRun = (int)(iend - anchor);
+  if (((byte*)op - dest) + lastRun + 1 + ((lastRun)>>8) >= maxOutputSize) return 0;
                     if (lastRun >= (int)LZ4Util.RUN_MASK) { *op++ = (byte)(LZ4Util.RUN_MASK << LZ4Util.ML_BITS); lastRun -= (byte)LZ4Util.RUN_MASK; for (; lastRun > 254; lastRun -= 255) *op++ = 255; *op++ = (byte)lastRun; }
                     else *op++ = (byte)(lastRun << LZ4Util.ML_BITS);
                     LZ4Util.CopyMemory(op, anchor, iend - anchor);
@@ -434,6 +530,7 @@ namespace LZ4Sharp
 
         }
     }
+
 
     /// <summary>
     /// Class for compressing a byte array into an LZ4 byte array.
@@ -522,8 +619,8 @@ namespace LZ4Sharp
             fixed (byte* d = dest)
             {
                 if (source.Length < (int)LZ4_64KLIMIT)
-                    return Compress64K(s, d, source.Length);
-                return Compress(s, d, source.Length);
+                    return Compress64K(s, d, source.Length, dest.Length);
+                return Compress(s, d, source.Length, dest.Length);
             }
         }
 
@@ -542,12 +639,12 @@ namespace LZ4Sharp
             fixed (byte* d = &dest[dstOffset])
             {
                 if (source.Length < (int)LZ4_64KLIMIT)
-                    return Compress64K(s, d, count);
-                return Compress(s, d, count);
+                    return Compress64K(s, d, count, dest.Length - dstOffset);
+                return Compress(s, d, count, dest.Length - dstOffset);
             }
         }
 
-        int Compress(byte* source, byte* dest, int isize)
+        int Compress(byte* source, byte* dest, int isize, int maxOutputSize)
         {
             fixed (byte* hashTablePtr = m_HashTable)
             fixed (byte* deBruijnBytePos = DeBruijnBytePos)
@@ -562,6 +659,7 @@ namespace LZ4Sharp
                 byte* iend = ip + isize;
                 byte* mflimit = iend - MFLIMIT;
                 byte* matchlimit = (iend - LASTLITERALS);
+    byte* oend = dest + maxOutputSize;
 
 
                 byte* op = (byte*)dest;
@@ -646,7 +744,7 @@ namespace LZ4Sharp
                 _endCount:
 
                     len = (int)(ip - anchor);
-
+  if (op + (1 + LASTLITERALS) + (len>>8) >= oend) return 0; // Check output limit
                     // Encode MatchLength
                     if (len >= (int)LZ4Util.ML_MASK) { *token += (byte)LZ4Util.ML_MASK; len -= (byte)LZ4Util.ML_MASK; for (; len > 509; len -= 510) { *op++ = 255; *op++ = 255; } if (len > 254) { len -= 255; *op++ = 255; } *op++ = (byte)len; }
                     else *token += (byte)len;
@@ -671,6 +769,7 @@ namespace LZ4Sharp
                 // Encode Last Literals
                 {
                     int lastRun = (int)(iend - anchor);
+  if (((byte*)op - dest) + lastRun + 1 + ((lastRun-15)/255) >= maxOutputSize) return 0;
                     if (lastRun >= (int)LZ4Util.RUN_MASK) { *op++ = (byte)(LZ4Util.RUN_MASK << LZ4Util.ML_BITS); lastRun -= (byte)LZ4Util.RUN_MASK; for (; lastRun > 254; lastRun -= 255) *op++ = 255; *op++ = (byte)lastRun; }
                     else *op++ = (byte)(lastRun << LZ4Util.ML_BITS);
                     LZ4Util.CopyMemory(op, anchor, iend - anchor);
@@ -693,7 +792,7 @@ namespace LZ4Sharp
 
 
 
-        int Compress64K(byte* source, byte* dest, int isize)
+        int Compress64K(byte* source, byte* dest, int isize, int maxOutputSize)
         {
             fixed (byte* hashTablePtr = m_HashTable)
             fixed (byte* deBruijnBytePos = DeBruijnBytePos)
@@ -708,6 +807,7 @@ namespace LZ4Sharp
                 byte* mflimit = iend - MFLIMIT;
                 byte* matchlimit = (iend - LASTLITERALS);
                 byte* op = (byte*)dest;
+    byte* oend = dest + maxOutputSize;
 
                 int len, length;
                 const int skipStrength = SKIPSTRENGTH;
@@ -749,6 +849,7 @@ namespace LZ4Sharp
                     // Encode Literal Length
                     length = (int)(ip - anchor);
                     token = op++;
+  if (op + length + (2 + 1 + LASTLITERALS) + (length>>8) >= oend) return 0; // Check output limit
                     if (length >= (int)LZ4Util.RUN_MASK) { *token = (byte)(LZ4Util.RUN_MASK << LZ4Util.ML_BITS); len = (int)(length - LZ4Util.RUN_MASK); for (; len > 254; len -= 255) *op++ = 255; *op++ = (byte)len; }
                     else *token = (byte)(length << LZ4Util.ML_BITS);
 
@@ -807,6 +908,7 @@ namespace LZ4Sharp
             _last_literals:
                 {
                     int lastRun = (int)(iend - anchor);
+  if (((byte*)op - dest) + lastRun + 1 + ((lastRun)>>8) >= maxOutputSize) return 0;
                     if (lastRun >= (int)LZ4Util.RUN_MASK) { *op++ = (byte)(LZ4Util.RUN_MASK << LZ4Util.ML_BITS); lastRun -= (byte)LZ4Util.RUN_MASK; for (; lastRun > 254; lastRun -= 255) *op++ = 255; *op++ = (byte)lastRun; }
                     else *op++ = (byte)(lastRun << LZ4Util.ML_BITS);
                     LZ4Util.CopyMemory(op, anchor, iend - anchor);
@@ -1046,27 +1148,29 @@ namespace LZ4Sharp
                 {
                     // get runLength
                     token = *ip++;
-                    if ((length = (token >> LZ4Util.ML_BITS)) == LZ4Util.RUN_MASK) { for (; (len = *ip++) == 255; length += 255) { } length += len; }
+  if ((length=(token>>LZ4Util.ML_BITS)) == LZ4Util.RUN_MASK) { int s=255; while ((ip<iend) && (s==255)) { s=*ip++; length += s; } }
 
                     // copy literals
                     cpy = op + length;
-                    if (cpy > oend - LZ4Util.COPYLENGTH)
+  if ((cpy>oend-LZ4Util.COPYLENGTH) || (ip+length>iend-LZ4Util.COPYLENGTH))
                     {
-                        if (cpy > oend) goto _output_error;
+   if (cpy > oend) goto _output_error; // Error : request to write beyond destination buffer
+   if (ip+length > iend) goto _output_error; // Error : request to read beyond source buffer
                         LZ4Util.CopyMemory(op, ip, length);
                         op += length;
+   ip += length;
+   if (ip<iend) goto _output_error; // Error : LZ4 format violation
                         break; //Necessarily EOF
                     }
 
                     do { *(uint*)op = *(uint*)ip; op+=4; ip+=4;; *(uint*)op = *(uint*)ip; op+=4; ip+=4;; } while (op<cpy);; ip -= (op - cpy); op = cpy;
-                    if (ip >= iend) break; // check EOF
 
                     // get offset
                     { r = (cpy) - *(ushort*)ip; }; ip+=2;
                     if (r < decompressedBuffer) goto _output_error;
 
                     // get matchlength
-                    if ((length = (int)(token & LZ4Util.ML_MASK)) == LZ4Util.ML_MASK) { for (; (len = *ip++) == 255; length += 255) { } length += len; }
+  if ((length=(int)(token&LZ4Util.ML_MASK)) == LZ4Util.ML_MASK) { while (ip<iend) { int s = *ip++; length +=s; if (s==255) continue; break; } }
 
                     // copy repeated sequence
                     if (op - r < STEPSIZE)
@@ -1305,27 +1409,29 @@ namespace LZ4Sharp
                 {
                     // get runLength
                     token = *ip++;
-                    if ((length = (token >> LZ4Util.ML_BITS)) == LZ4Util.RUN_MASK) { for (; (len = *ip++) == 255; length += 255) { } length += len; }
+  if ((length=(token>>LZ4Util.ML_BITS)) == LZ4Util.RUN_MASK) { int s=255; while ((ip<iend) && (s==255)) { s=*ip++; length += s; } }
 
                     // copy literals
                     cpy = op + length;
-                    if (cpy > oend - LZ4Util.COPYLENGTH)
+  if ((cpy>oend-LZ4Util.COPYLENGTH) || (ip+length>iend-LZ4Util.COPYLENGTH))
                     {
-                        if (cpy > oend) goto _output_error;
+   if (cpy > oend) goto _output_error; // Error : request to write beyond destination buffer
+   if (ip+length > iend) goto _output_error; // Error : request to read beyond source buffer
                         LZ4Util.CopyMemory(op, ip, length);
                         op += length;
+   ip += length;
+   if (ip<iend) goto _output_error; // Error : LZ4 format violation
                         break; //Necessarily EOF
                     }
 
                     do { *(ulong*)op = *(ulong*)ip; op+=8; ip+=8; } while (op<cpy);; ip -= (op - cpy); op = cpy;
-                    if (ip >= iend) break; // check EOF
 
                     // get offset
                     { r = (cpy) - *(ushort*)ip; }; ip+=2;
                     if (r < decompressedBuffer) goto _output_error;
 
                     // get matchlength
-                    if ((length = (int)(token & LZ4Util.ML_MASK)) == LZ4Util.ML_MASK) { for (; (len = *ip++) == 255; length += 255) { } length += len; }
+  if ((length=(int)(token&LZ4Util.ML_MASK)) == LZ4Util.ML_MASK) { while (ip<iend) { int s = *ip++; length +=s; if (s==255) continue; break; } }
 
                     // copy repeated sequence
                     if (op - r < STEPSIZE)

@@ -3,6 +3,8 @@
 //
 // * C# LZF: http://csharplzfcompression.codeplex.com
 // * QuickLZ 1.5.0 final: http://quicklz.com
+// * LZ4: http://fastcompression.blogspot.com/p/lz4.html, https://github.com/stangelandcl/LZ4Sharp
+// * MiniLZO: http://www.codeproject.com/Articles/16239/Pure-C-MiniLZO-port, http://slserializelzo.codeplex.com/
 // * DeflateStream: http://msdn.microsoft.com/library/system.io.compression.deflatestream.aspx
 // * iROLZ: http://ezcodesample.com/rolz/rolz_article.html
 //
