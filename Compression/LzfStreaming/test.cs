@@ -18,14 +18,14 @@ class Program
 		}
 	}
 
-	private static int bufferSize = 200; //5678; //1234;
+	private static int bufferSize = 8192;
 
-	private const int INT_SIZE = sizeof(System.Int32);
+	private const int SHORT_SIZE = sizeof(System.Int16);
 
 	static void Compress()
 	{
 		using (var inputFile = File.OpenRead("bench.dat"))
-		using (var outputFile = File.OpenWrite("bench.lzf"))
+		using (var outputFile = File.Create("bench.lzf"))
 		{
 			var buffer = new byte[bufferSize];
 			var output = new byte[buffer.Length * 2];
@@ -34,13 +34,13 @@ class Program
 
 			while (count > 0)
 			{
-				var readCount = inputFile.Read(buffer, 0, buffer.Length);
+				var readCount = (System.Int16)inputFile.Read(buffer, 0, buffer.Length);
 				if (readCount == 0)
 				{
 					throw new InvalidOperationException("Cannot read input stream.");
 				}
 
-				var writeCount = lzf.Compress(buffer, readCount, output, output.Length);
+				var writeCount = (System.Int16)lzf.Compress(buffer, readCount, output, output.Length);
 				if (writeCount == 0)
 				{
 					throw new InvalidOperationException("Cannot compress input stream.");
@@ -48,15 +48,16 @@ class Program
 
 				// source size
 				var temp = BitConverter.GetBytes(readCount);
-				outputFile.Write(temp, 0, INT_SIZE);
+				outputFile.Write(temp, 0, SHORT_SIZE);
 
 				// destination size
 				temp = BitConverter.GetBytes(writeCount);
-				outputFile.Write(temp, 0, INT_SIZE);
+				outputFile.Write(temp, 0, SHORT_SIZE);
 
 				// data chunk
 				outputFile.Write(output, 0, writeCount);
 				count -= readCount;
+				//Console.WriteLine("{0} -> {1}: {2}", readCount, writeCount, count);
 			}
 		}
 	}
@@ -64,26 +65,27 @@ class Program
 	static void Decompress()
 	{
 		using (var inputFile = File.OpenRead("bench.lzf"))
-		using (var outputFile = File.OpenWrite("bench.out"))
+		using (var outputFile = File.Create("bench.out"))
 		{
+			var buffer = new byte[bufferSize * 2];
+			var output = new byte[bufferSize];
+			var temp = new byte[SHORT_SIZE * 2];
 			var lzf = new LZF();
 			var count = (int)inputFile.Length;
-			var temp = new byte[INT_SIZE * 2];
 
 			while (count > 0)
 			{
-				inputFile.Read(temp, 0, INT_SIZE * 2); 
-				var sourceSize = BitConverter.ToInt32(temp, 0);
-				var destSize = BitConverter.ToInt32(temp, INT_SIZE);
+				// read chunk sizes
+				inputFile.Read(temp, 0, SHORT_SIZE * 2);
+				var sourceSize = BitConverter.ToInt16(temp, 0);
+				var destSize = BitConverter.ToInt16(temp, SHORT_SIZE);
 
-				var buffer = new byte[destSize];
 				var readCount = inputFile.Read(buffer, 0, destSize);
 				if (readCount != destSize)
 				{
 					throw new InvalidOperationException("Cannot read input stream.");
 				}
 
-				var output = new byte[sourceSize + 10];
 				var writeCount = lzf.Decompress(buffer, readCount, output, output.Length);
 				if (writeCount != sourceSize)
 				{
@@ -91,7 +93,8 @@ class Program
 				}
 
 				outputFile.Write(output, 0, writeCount);
-				count -= (readCount + INT_SIZE * 2);
+				count -= (readCount + SHORT_SIZE * 2);
+				//Console.WriteLine("{0} -> {1}: {2}", sourceSize, destSize, count);
 			}
 		}
 	}
