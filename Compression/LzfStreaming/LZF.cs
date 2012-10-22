@@ -89,7 +89,7 @@ namespace Lzf
     public sealed class LZF
     {
         /// <summary>
-        /// Hashtable, that can be allocated only once
+        /// Hashtable, thac can be allocated only once
         /// </summary>
         private readonly long[] HashTable = new long[HSIZE];
 

@@ -18,29 +18,28 @@ class Program
 		}
 	}
 
-	private static int bufferSize = 8192;
+	private const int BUFFER_SIZE = 8192;
 
-	private const int SHORT_SIZE = sizeof(System.Int16);
+	private const int SHORT_SIZE = sizeof(short);
 
 	static void Compress()
 	{
 		using (var inputFile = File.OpenRead("bench.dat"))
 		using (var outputFile = File.Create("bench.lzf"))
 		{
-			var buffer = new byte[bufferSize];
+			var buffer = new byte[BUFFER_SIZE];
 			var output = new byte[buffer.Length * 2];
 			var lzf = new LZF();
-			var count = (int)inputFile.Length;
 
-			while (count > 0)
+			while (true)
 			{
-				var readCount = (System.Int16)inputFile.Read(buffer, 0, buffer.Length);
+				var readCount = (short)inputFile.Read(buffer, 0, buffer.Length);
 				if (readCount == 0)
 				{
-					throw new InvalidOperationException("Cannot read input stream.");
+					break;
 				}
 
-				var writeCount = (System.Int16)lzf.Compress(buffer, readCount, output, output.Length);
+				var writeCount = (short)lzf.Compress(buffer, readCount, output, output.Length);
 				if (writeCount == 0)
 				{
 					throw new InvalidOperationException("Cannot compress input stream.");
@@ -56,8 +55,6 @@ class Program
 
 				// data chunk
 				outputFile.Write(output, 0, writeCount);
-				count -= readCount;
-				//Console.WriteLine("{0} -> {1}: {2}", readCount, writeCount, count);
 			}
 		}
 	}
@@ -67,16 +64,19 @@ class Program
 		using (var inputFile = File.OpenRead("bench.lzf"))
 		using (var outputFile = File.Create("bench.out"))
 		{
-			var buffer = new byte[bufferSize * 2];
-			var output = new byte[bufferSize];
+			var buffer = new byte[BUFFER_SIZE * 2];
+			var output = new byte[BUFFER_SIZE];
 			var temp = new byte[SHORT_SIZE * 2];
 			var lzf = new LZF();
-			var count = (int)inputFile.Length;
 
-			while (count > 0)
+			while (true)
 			{
 				// read chunk sizes
-				inputFile.Read(temp, 0, SHORT_SIZE * 2);
+				if (inputFile.Read(temp, 0, SHORT_SIZE * 2) == 0)
+				{
+					break;
+				}
+
 				var sourceSize = BitConverter.ToInt16(temp, 0);
 				var destSize = BitConverter.ToInt16(temp, SHORT_SIZE);
 
@@ -93,8 +93,6 @@ class Program
 				}
 
 				outputFile.Write(output, 0, writeCount);
-				count -= (readCount + SHORT_SIZE * 2);
-				//Console.WriteLine("{0} -> {1}: {2}", sourceSize, destSize, count);
 			}
 		}
 	}
